@@ -6,7 +6,7 @@ import passwordIcon from '../icons/password.png'
 import userInterfaceIcon from '../icons/user-interface.png';
 import mailIcon from '../icons/mail.png';
 
-const LoginRegister = () => {
+const LoginRegister = ({ onSuccess }) => {
     const userRef = useRef(null);
     const errRef = useRef(null);
     const [action, setAction] = useState('Login');
@@ -41,11 +41,16 @@ const LoginRegister = () => {
             if ((action === 'Login' && response.status === 200) || (action === 'Register' && response.status === 201)) {
                 console.log(`${action} successful:`, response.data);
                 setSuccess(true);
+                onSuccess?.(response.data.user);
                 setErrMsg('');
                 setUser('');
                 setEmail('');
                 setPwd('');
                 setMatchPwd('');
+                if (action === 'Login') {
+                    props.onSuccess?.(response.data.user);
+                }
+                return; 
             }
         } catch (error) {
             const status = error.response?.status;

@@ -8,6 +8,7 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+const Todo = require('./src/models/Todo'); 
 
 const systemLog = (req, res, next) => {
   const method = req.method;
@@ -104,4 +105,49 @@ app.post('/login', async (req, res) => {
   }
 });
 
+app.post('/todos', authenticate, async (req, res) => {
+  const { text, userId } = req.body;
+  if (!text || !userId) return res.status(400).json({ message: 'Missing text or userId' });
+
+  try {
+    const todo = new Todo({ text, done: false, user: userId });
+    await todo.save();
+    res.status(201).json(todo);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to create todo', error: error.message });
+  }
+});
+
+app.get('/todos', authenticate, async (req, res) => {
+  const { user } = req.query;
+  if (!user) return res.status(400).json({ message: 'Missing user ID' });
+
+  try {
+    const todos = await Todo.find({ user });
+    res.status(200).json(todos);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch todos', error });
+  }
+});
+
+app.put('/todos/:id', authenticate, async (req, res) => {
+  try {
+    const todo = await Todo.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(todo);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update todo', error });
+  }
+});
+
+app.delete('/todos/:id', authenticate, async (req, res) => {
+  try {
+    await Todo.findByIdAndDelete(req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete todo', error });
+  }
+});
+
+
 app.listen(3500, () => console.log('Server running on http://localhost:3500'));
+
